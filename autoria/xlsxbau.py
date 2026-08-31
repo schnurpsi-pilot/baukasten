@@ -13,9 +13,9 @@ from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.chart import BarChart, LineChart, PieChart, ScatterChart, Reference
 from openpyxl.chart.label import DataLabelList
 from openpyxl.chart.marker import DataPoint
-from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.drawing.fill import ColorChoice
 from openpyxl.drawing.line import LineProperties
+from openpyxl.chart.shapes import GraphicalProperties
 from openpyxl.utils import get_column_letter
 
 ARIAL = "Arial"
@@ -222,7 +222,8 @@ def _auswertungsblatt(wb, blatt, loesung):
             ch.dataLabels.showBubbleSize = False
         if isinstance(ch, PieChart):
             # §8: alle Artefakte schwarz-weiß. Ohne eigene Zuweisung färbt
-            # die Anwendung jeden Datenpunkt bunt ein.
+            # die Anwendung jeden Datenpunkt bunt ein — beim Kreisdiagramm
+            # anders als bei einer einreihigen Säule, wo es nicht auffällt.
             stufen = ["404040", "595959", "7F7F7F", "A6A6A6", "BFBFBF",
                       "D9D9D9"]
             punkte = (r_bis - r_von) + 1
@@ -231,6 +232,17 @@ def _auswertungsblatt(wb, blatt, loesung):
                     solidFill=ColorChoice(srgbClr=stufen[i % len(stufen)]),
                     ln=LineProperties(solidFill="404040", w=9525)))
                 for i in range(punkte)]
+            ch.legend.position = "b"
+        else:
+            # §8: auch Säulen, Balken und Linien schwarz-weiß. Ohne eigene
+            # Zuweisung greift die bunte Standardpalette der Anwendung.
+            for reihe in ch.series:
+                reihe.graphicalProperties = GraphicalProperties(
+                    solidFill=ColorChoice(srgbClr="7F7F7F"),
+                    ln=LineProperties(solidFill="404040", w=9525))
+        if dia.get("legende") == "unten" and ch.legend is not None:
+            # Rechts stehend frisst die Legende Zeichenfläche und wird beim
+            # Drucken abgeschnitten, sobald die Rubriknamen lang sind.
             ch.legend.position = "b"
         ch.height = dia.get("hoehe", 9)
         ch.width = dia.get("breite", 19)

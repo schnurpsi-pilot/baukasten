@@ -81,6 +81,10 @@ def autotext_fusszeile(doc, groesse=9, felder=("dateiname", "datum", "seiten")):
     Datum, Seitenanzahl und Uhrzeit. Sie werden als echte Feldfunktionen
     gesetzt, nicht als getippter Text — nur dann aktualisieren sie sich und
     nur dann ist die Prüfungsleistung nachweisbar.
+
+    Die Felder zeigen beim Öffnen zunächst einen Platzhalter; der Hinweis,
+    sie vor dem Korrigieren zu aktualisieren, gehört in die Handreichung
+    (§11.1).
     """
     ANWEISUNG = {"dateiname": " FILENAME \\* MERGEFORMAT ",
                  "datum": " DATE \\@ \"dd.MM.yyyy\" ",
@@ -92,7 +96,7 @@ def autotext_fusszeile(doc, groesse=9, felder=("dateiname", "datum", "seiten")):
         p.text = ""
         for i, feld in enumerate(felder):
             if i:
-                p.add_run("   \u00b7   ")
+                p.add_run("   ·   ")
             if feld == "seiten":
                 p.add_run("Seite ")
                 _feld(p, " PAGE ")

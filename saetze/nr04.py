@@ -529,7 +529,7 @@ def spec():
                  {"typ": "text", "text":
                      "Den Brief zeichnet Frau Ruth Adam, Sachbearbeiterin "
                      "Beschaffung/Einkauf, Telefon 030 123456-112, Telefax "
-                     "030 123456-100, E-Mail ruth.adam@goldberg.test. Unser Zeichen: "
+                     "030 123456-100, E-Mail ruth.adam@goldberg.test — Unser Zeichen: "
                      "kor-ad. Der Brief wird auf den 27.08.2026 datiert; das Datum "
                      "ist in der Datei bereits eingetragen."},
              ]},
@@ -819,7 +819,7 @@ def _bewertung():
                     "der Postleitzahl. 2 Punkte Informationsblock: Ihr Zeichen "
                     "VO-8823, Ihre Nachricht vom 04.08.2026, Unser Zeichen kor-ad, "
                     "Name Ruth Adam, Telefon 030 123456-112, Telefax 030 123456-100, "
-                    "E-Mail ruth.adam@goldberg.test. Das Datum war vorgegeben.",
+                    "E-Mail ruth.adam@goldberg.test — das Datum war vorgegeben.",
          "toleranz": "Reihenfolge Firma vor Person und Person vor Firma zählen beide. "
                      "Nicht ausgefüllte Felder ohne Angabe in Anlage 4 (Unsere "
                      "Nachricht vom): kein Abzug."},

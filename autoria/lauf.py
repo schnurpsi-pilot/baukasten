@@ -69,6 +69,10 @@ def _bloecke_schreiben(doc, bloecke, fettbegriffe=()):
             O.wordart(p, block["text"], breite_pt=block.get("breite_pt", 340),
                       hoehe_pt=block.get("hoehe_pt", 42),
                       groesse_pt=block.get("groesse_pt", 36))
+        elif typ == "seitenumbruch":
+            # Beim zusammengeführten Serienbrief steht jeder Brief auf einer
+            # eigenen Seite (§6.2).
+            B.seitenumbruch(doc)
         elif typ == "leer":
             B.absatz(doc, "", nach=block.get("nach", 0))
         else:

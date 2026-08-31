@@ -425,8 +425,8 @@ def spec():
              "gehoert_zu": "Aufgaben 1 bis 3",
              "bloecke": [
                  {"typ": "felder", "paare": [
-                     ("Von", "ute.winkelmann@goldberg-gmbh.com"),
-                     ("An", "verwaltung@goldberg-gmbh.com"),
+                     ("Von", "ute.winkelmann@goldberg.test"),
+                     ("An", "verwaltung@goldberg.test"),
                      ("Datum", "26.08.2026"),
                      ("Betreff", "Posteingang KW 35 – Auswertung, Laufzettel "
                                  "und Mitteilung")]},

@@ -10,6 +10,21 @@ Der Absatz zur Umsatzsteuer ist nach §5.2 wörtlich vorgeschrieben und darf
 nicht umformuliert werden.
 """
 
+# Domain des Modellunternehmens. .test ist nach RFC 2606 für Testzwecke
+# reserviert und kann niemandem gehören — eine erfundene .com-Adresse
+# dagegen schon. Deshalb steht sie hier zentral und wird nicht je Satz
+# neu getippt.
+DOMAIN = "goldberg.test"
+
+
+def mail(name):
+    """Baut eine E-Mail-Adresse des Modellunternehmens.
+
+    mail("ines.kortmann") ergibt "ines.kortmann@goldberg.test".
+    """
+    return f"{name}@{DOMAIN}"
+
+
 # Platzhalter {beispieldatei} wird je Satz gefüllt, weil die Endung von der
 # ersten Aufgabe abhängt. Die Zahl der Anlagen wird bewusst nicht genannt:
 # sie ändert sich je Satz, ließe sich nicht gegen die Anlagenliste prüfen und
