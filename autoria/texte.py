@@ -30,8 +30,8 @@ HINWEISE_STANDARD = [
     ("Punkte",
      "Die Punktzahl steht hinter jeder Teilaufgabe. In jeder Aufgabe "
      "entfallen zusätzlich 2 Punkte auf die Einhaltung der Formatvorgaben. "
-     "Verwenden Sie überall dort Formeln, die Sie nach unten kopieren können, "
-     "wo mehrere Zeilen gleichartig berechnet werden."),
+     "Verwenden Sie kopierfähige Formeln mit Zellbezügen, wo mehrere Zeilen "
+     "gleichartig berechnet werden."),
     ("Umsatzsteuer",
      "Alle Beträge in den Anlagen und Dateien sind Nettobeträge; der "
      "Umsatzsteuersatz beträgt 19 Prozent."),
