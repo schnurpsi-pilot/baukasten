@@ -11,6 +11,7 @@ import datetime as dt
 from decimal import Decimal, ROUND_HALF_UP
 
 from autoria.layout import eur, datum
+from autoria.texte import hinweise
 
 SATZNAME = "AP1-NrXX-V4-6"
 
@@ -49,8 +50,12 @@ def spec():
 
         "sachverhalt": "5 bis 8 Zeilen Rahmenhandlung im Modellunternehmen (§5.2).",
 
-        # Die fünf Pflichtpunkte; Wortlaut aus nr01.py übernehmen (§5.2)
-        "hinweise": [],
+        # Die fünf Pflichtpunkte nach §5.2 — Wortlaut zentral in
+        # autoria/texte.py, hier nur die satzabhängigen Platzhalter füllen.
+        # Nicht abschreiben und nicht umformulieren: der Absatz zur
+        # Umsatzsteuer ist wörtlich vorgeschrieben.
+        "hinweise": hinweise(beispieldatei="Weber1708_A1.xlsx",
+                             anlagenzahl=5),
 
         # Nur die Zeilen, die der Satz braucht (§5.7 Teil 2)
         "formatvorgaben": [],
