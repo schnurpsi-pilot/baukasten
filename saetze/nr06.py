@@ -253,7 +253,7 @@ def spec():
                           "titel": "Probezeitgespräche je Monat",
                           "wertachse": "Anzahl der Gespräche",
                           "rubrikachse": "Monat", "position": "A32",
-                          "legende": "unten", "beschriftung": "wert",
+                          "beschriftung": "wert",
                           "breite": 15.5, "hoehe": 8.0}},
 
             {"name": "Teiln", "titel": "Mitarbeitende in der Probezeit",

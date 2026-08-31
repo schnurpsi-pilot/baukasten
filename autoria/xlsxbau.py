@@ -212,6 +212,18 @@ def _auswertungsblatt(wb, blatt, loesung):
         if hasattr(ch, "y_axis"):
             ch.y_axis.title = dia.get("wertachse", "")
             ch.x_axis.title = dia.get("rubrikachse", "")
+            # Die Wertachse beginnt bei null. Ohne feste Untergrenze wählt
+            # die Anwendung einen Ausschnitt, sobald die Werte eng
+            # beieinanderliegen — die Balkenlängen verhalten sich dann nicht
+            # mehr wie die Werte und das Bild täuscht (§8, Gestaltungsmuster).
+            if dia.get("ab_null", True):
+                ch.y_axis.scaling.min = 0
+            if dia.get("typ", "saeule") == "balken":
+                # Waagerechte Balken zeichnet die Anwendung von unten nach
+                # oben. Damit die erste Tabellenzeile oben steht wie im
+                # Gestaltungsmuster, wird die Rubrikenachse gedreht.
+                ch.x_axis.scaling.orientation = "maxMin"
+                ch.y_axis.crosses = "max"
         # Ohne Angabe speist sich das Diagramm aus der Auswertungstabelle.
         # Ein eigener Bereich wird gebraucht, wenn die Datenlage darunter
         # steht — etwa eine Anteilsrechnung je Kategorie.
@@ -255,9 +267,10 @@ def _auswertungsblatt(wb, blatt, loesung):
                 reihe.graphicalProperties = GraphicalProperties(
                     solidFill=ColorChoice(srgbClr="7F7F7F"),
                     ln=LineProperties(solidFill="404040", w=9525))
-        if dia.get("legende") == "unten" and ch.legend is not None:
+        if ch.legend is not None and dia.get("legende", "unten") == "unten":
             # Rechts stehend frisst die Legende Zeichenfläche und wird beim
-            # Drucken abgeschnitten, sobald die Rubriknamen lang sind.
+            # Drucken abgeschnitten, sobald die Reihennamen lang sind.
+            # Deshalb ist unten der Standard; "rechts" bleibt als Ausnahme.
             ch.legend.position = "b"
         ch.height = dia.get("hoehe", 9)
         ch.width = dia.get("breite", 19)
