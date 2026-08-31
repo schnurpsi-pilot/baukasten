@@ -69,6 +69,31 @@ def _bloecke_schreiben(doc, bloecke, fettbegriffe=()):
             O.wordart(p, block["text"], breite_pt=block.get("breite_pt", 340),
                       hoehe_pt=block.get("hoehe_pt", 42),
                       groesse_pt=block.get("groesse_pt", 36))
+        elif typ == "formularzeile":
+            # Beschriftung plus Inhaltssteuerelement in einem Absatz. Die
+            # Feldart steht in der Satzspezifikation, nicht im Aufgabentext
+            # — dort benennt sie der Auftrag (§11.4).
+            par = B.absatz(doc, block.get("text", ""),
+                           nach=block.get("nach", 6), vor=block.get("vor", 0))
+            art = block["feld"]
+            if art == "text":
+                O.textfeld(par, block.get("platzhalter",
+                                          "Klicken Sie hier, um Text "
+                                          "einzugeben."),
+                           tag=block.get("tag"),
+                           mehrzeilig=block.get("mehrzeilig", False))
+            elif art == "datum":
+                O.datumsfeld(par, block.get("platzhalter", "TT.MM.JJJJ"),
+                             tag=block.get("tag"))
+            elif art == "auswahl":
+                O.auswahlfeld(par, block["eintraege"],
+                              block.get("platzhalter", "Bitte auswählen"),
+                              tag=block.get("tag"),
+                              frei=block.get("frei", False))
+            elif art == "kontrollkaestchen":
+                O.kontrollkaestchen(par, tag=block.get("tag"))
+            else:
+                raise KeyError(f"Unbekannte Feldart: {art}")
         elif typ == "seitenumbruch":
             # Beim zusammengeführten Serienbrief steht jeder Brief auf einer
             # eigenen Seite (§6.2).

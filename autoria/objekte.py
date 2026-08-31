@@ -130,3 +130,113 @@ def hat_wordart(dokument):
     """True, wenn im Dokument mindestens ein WordArt-Textpfad steckt."""
     xml = dokument.element.xml
     return "v:textpath" in xml and 'string="' in xml
+
+
+# --------------------------------------------------- Inhaltssteuerelemente
+# Word nennt sie Inhaltssteuerelemente, im XML heißen sie "structured
+# document tag" (sdt). python-docx kennt sie nicht, deshalb werden sie hier
+# von Hand gesetzt. Aufbau: sdt > sdtPr (was für ein Feld) + sdtContent
+# (was angezeigt wird, solange nichts eingetragen ist).
+#
+# Anhang D.2 kennt vier Arten. Ihre Namen gehören in den Aufgabenbogen,
+# nicht in die Anlage (§11.4) — die Anlage nennt nur die Art der Eingabe.
+def _sdt(art, platzhalter, eigenschaften=None, tag=None):
+    sdt = OxmlElement("w:sdt")
+    pr = OxmlElement("w:sdtPr")
+
+    if tag:
+        t = OxmlElement("w:tag")
+        t.set(qn("w:val"), tag)
+        pr.append(t)
+    alias = OxmlElement("w:alias")
+    alias.set(qn("w:val"), tag or art)
+    pr.append(alias)
+
+    # Der Platzhaltertext verschwindet, sobald die Zelle beschrieben wird.
+    ph = OxmlElement("w:showingPlcHdr")
+    pr.append(ph)
+
+    pr.append(eigenschaften if eigenschaften is not None
+              else OxmlElement(f"w:{art}"))
+    sdt.append(pr)
+
+    inhalt = OxmlElement("w:sdtContent")
+    lauf = OxmlElement("w:r")
+    text = OxmlElement("w:t")
+    text.text = platzhalter
+    lauf.append(text)
+    inhalt.append(lauf)
+    sdt.append(inhalt)
+    return sdt
+
+
+def textfeld(absatz, platzhalter="Klicken Sie hier, um Text einzugeben.",
+             tag=None, mehrzeilig=False):
+    """Freies Texteingabefeld (Anhang D.2)."""
+    eig = OxmlElement("w:text")
+    if mehrzeilig:
+        eig.set(qn("w:multiLine"), "1")
+    absatz._p.append(_sdt("text", platzhalter, eig, tag))
+    return absatz
+
+
+def datumsfeld(absatz, platzhalter="TT.MM.JJJJ", tag=None,
+               format_="dd.MM.yyyy"):
+    """Datumsauswahl mit festem Anzeigeformat (Anhang D.2)."""
+    eig = OxmlElement("w:date")
+    fmt = OxmlElement("w:dateFormat")
+    fmt.set(qn("w:val"), format_)
+    eig.append(fmt)
+    kal = OxmlElement("w:calendar")
+    kal.set(qn("w:val"), "gregorian")
+    eig.append(kal)
+    absatz._p.append(_sdt("date", platzhalter, eig, tag))
+    return absatz
+
+
+def auswahlfeld(absatz, eintraege, platzhalter="Bitte auswählen", tag=None,
+                frei=False):
+    """Auswahlliste. frei=True lässt zusätzlich eigene Eingaben zu (D.2)."""
+    eig = OxmlElement("w:comboBox" if frei else "w:dropDownList")
+    for e in eintraege:
+        item = OxmlElement("w:listItem")
+        item.set(qn("w:displayText"), str(e))
+        item.set(qn("w:value"), str(e))
+        eig.append(item)
+    absatz._p.append(_sdt("dropDownList", platzhalter, eig, tag))
+    return absatz
+
+
+def kontrollkaestchen(absatz, tag=None):
+    """Ankreuzfeld (Anhang D.2)."""
+    eig = OxmlElement("w14:checkbox")
+    for name, wert in (("w14:checked", "0"),
+                       ("w14:checkedState", "2612"),
+                       ("w14:uncheckedState", "2610")):
+        kind = OxmlElement(name)
+        if name == "w14:checked":
+            kind.set(qn("w14:val"), wert)
+        else:
+            kind.set(qn("w14:val"), wert)
+            kind.set(qn("w14:font"), "MS Gothic")
+        eig.append(kind)
+    absatz._p.append(_sdt("checkbox", "\u2610", eig, tag))
+    return absatz
+
+
+def formularfelder_zaehlen(dokument):
+    """Zählt die Inhaltssteuerelemente je Art.
+
+    Wird von der Checkliste gebraucht: ein Pflichtelement gilt nur als
+    belegt, wenn es im Artefakt auch wirklich steckt (§10.3).
+    """
+    ARTEN = {"text": "Textfeld", "date": "Datumsfeld",
+             "dropDownList": "Auswahlfeld", "comboBox": "Auswahlfeld",
+             "checkbox": "Kontrollkästchen"}
+    gefunden = {}
+    for sdtPr in dokument.element.body.iter(qn("w:sdtPr")):
+        for kind in sdtPr:
+            name = kind.tag.split("}")[-1]
+            if name in ARTEN:
+                gefunden[ARTEN[name]] = gefunden.get(ARTEN[name], 0) + 1
+    return gefunden

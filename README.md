@@ -1,4 +1,4 @@
-# AUTORIA-Baukasten v1.3 — AP1-Prüfungssimulationen
+# AUTORIA-Baukasten v1.4 — AP1-Prüfungssimulationen
 
 Setzt den Masterprompt **AP1 v4.6** maschinell um. Aus einer Satzspezifikation
 entstehen alle Artefakte nach §11.2, die Checkliste nach §14.1 läuft automatisch,

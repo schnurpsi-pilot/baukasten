@@ -361,17 +361,39 @@ def objekte_pruefen(spec, ordner, bf):
     name = spec["meta"]["satzname"]
     geprueft = []
     for datei in spec.get("dateien", []):
-        if datei["art"] != "dotx":
+        # Formularfelder können in einem Dokument wie in einer Vorlage
+        # stecken, deshalb wird nicht auf die Dateiart vorgefiltert.
+        endung = "dotx" if datei["art"] == "dotx" else "docx"
+        if datei["art"] not in ("dotx", "dokument", "vorlage"):
             continue
-        pfad = os.path.join(ordner, f"{name}_{datei['praefix']}_Loesung.dotx")
+        if not (datei.get("wordart_erwartet")
+                or datei.get("formularfelder_erwartet")
+                or datei["art"] == "dotx"):
+            continue
+        pfad = os.path.join(ordner,
+                            f"{name}_{datei['praefix']}_Loesung.{endung}")
         if not os.path.exists(pfad):
-            bf.fehler(f"Lösungsvorlage fehlt: {os.path.basename(pfad)}.")
+            bf.fehler(f"Lösungsdatei fehlt: {os.path.basename(pfad)}.")
             continue
-        if O.ist_vorlage(pfad):
-            geprueft.append(f"{datei['praefix']}: echte Dokumentvorlage")
-        else:
-            bf.fehler(f"{os.path.basename(pfad)} ist nur umbenannt, nicht als "
-                      "Dokumentvorlage angelegt (Anhang D.2).")
+        if datei["art"] == "dotx":
+            if O.ist_vorlage(pfad):
+                geprueft.append(f"{datei['praefix']}: echte Dokumentvorlage")
+            else:
+                bf.fehler(f"{os.path.basename(pfad)} ist nur umbenannt, nicht "
+                          "als Dokumentvorlage angelegt (Anhang D.2).")
+        if datei.get("formularfelder_erwartet"):
+            from docx import Document as _D
+            gez = O.formularfelder_zaehlen(_D(pfad))
+            fehlt = [a for a in datei["formularfelder_erwartet"]
+                     if not gez.get(a)]
+            if fehlt:
+                bf.fehler(f"{os.path.basename(pfad)}: erwartete "
+                          f"Inhaltssteuerelemente fehlen: "
+                          f"{', '.join(fehlt)} (§10.3).")
+            else:
+                geprueft.append(f"{datei['praefix']}: Formularfelder "
+                                + ", ".join(f"{k} {v}\u00d7"
+                                            for k, v in sorted(gez.items())))
         if datei.get("wordart_erwartet"):
             xml = _dokument_xml(pfad)
             if "v:textpath" in xml and 'string="' in xml:

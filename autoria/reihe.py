@@ -185,7 +185,11 @@ def pflichtbelegung(plan, historie, eintrag):
     offen = []
     for zeile in bilanz:
         name = zeile.get("pflichtelement")
-        soll = zeile.get("soll_bei_32") or zeile.get("soll") or 0
+        # Der Feldname trägt die Bezugsgröße der Reihe. Er hat sich schon
+        # einmal geändert (32 auf 26 Vollprüfungen), deshalb werden beide
+        # Schreibweisen und ein neutrales "soll" akzeptiert.
+        soll = (zeile.get("soll_bei_26") or zeile.get("soll_bei_32")
+                or zeile.get("soll") or 0)
         ist = belegt.get(_normal(name), 0)
         if ist < soll:
             offen.append(name)
