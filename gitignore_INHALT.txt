@@ -1,6 +1,0 @@
-__pycache__/
-*.pyc
-arbeit/
-ausgabe/
-*_Historie.json
-AP1-Reihenplan_*.json
