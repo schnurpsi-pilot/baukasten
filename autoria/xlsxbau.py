@@ -11,6 +11,11 @@ import datetime as dt
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
 from openpyxl.chart import BarChart, LineChart, PieChart, ScatterChart, Reference
+from openpyxl.chart.label import DataLabelList
+from openpyxl.chart.marker import DataPoint
+from openpyxl.chart.shapes import GraphicalProperties
+from openpyxl.drawing.fill import ColorChoice
+from openpyxl.drawing.line import LineProperties
 from openpyxl.utils import get_column_letter
 
 ARIAL = "Arial"
@@ -27,6 +32,7 @@ FMT = {
     "menge": '#,##0',
     "ganz": '0',
     "datum": 'DD.MM.YYYY',
+    "zeit": 'HH:MM',
     "text": '@',
     "dezimal": '#,##0.00',
 }
@@ -157,6 +163,15 @@ def _auswertungsblatt(wb, blatt, loesung):
             if sp.get("format"):
                 cell.number_format = FMT.get(sp["format"], sp["format"])
 
+    # Feste Zellen stehen in beiden Fassungen: Blockköpfe und Rubriken sind
+    # vorgegebene Struktur, nicht Prüfungsleistung (§11.1).
+    for fest in blatt.get("festzellen", []):
+        cell = ws[fest["zelle"]]
+        cell.value = fest["text"]
+        cell.font = F_BOLD if fest.get("fett") else F_TXT
+        if fest.get("rahmen"):
+            cell.border = BORD
+
     for zusatz in blatt.get("einzelzellen", []):
         if zusatz.get("label"):
             lz = ws[zusatz["label_zelle"]]
@@ -182,12 +197,41 @@ def _auswertungsblatt(wb, blatt, loesung):
         if hasattr(ch, "y_axis"):
             ch.y_axis.title = dia.get("wertachse", "")
             ch.x_axis.title = dia.get("rubrikachse", "")
-        werte = Reference(ws, min_col=dia["wertespalte"], min_row=kopfzeile,
-                          max_row=erste + anzahl - 1)
-        rubriken = Reference(ws, min_col=dia["rubrikspalte"], min_row=erste,
-                             max_row=erste + anzahl - 1)
+        # Ohne Angabe speist sich das Diagramm aus der Auswertungstabelle.
+        # Ein eigener Bereich wird gebraucht, wenn die Datenlage darunter
+        # steht — etwa eine Anteilsrechnung je Kategorie.
+        w_von, w_bis = dia.get("werte_zeilen", (kopfzeile, erste + anzahl - 1))
+        r_von, r_bis = dia.get("rubrik_zeilen", (erste, erste + anzahl - 1))
+        werte = Reference(ws, min_col=dia["wertespalte"], min_row=w_von,
+                          max_row=w_bis)
+        rubriken = Reference(ws, min_col=dia["rubrikspalte"], min_row=r_von,
+                             max_row=r_bis)
         ch.add_data(werte, titles_from_data=True)
         ch.set_categories(rubriken)
+        if dia.get("beschriftung"):
+            # Kreisdiagramme tragen ihre Aussage in der Beschriftung, nicht
+            # an einer Achse (Anhang D.4). Kategorie- und Reihenname werden
+            # ausdrücklich abgeschaltet: sonst ergänzt die Anwendung sie und
+            # jedes Kreissegment trägt dreimal dieselbe Auskunft.
+            ch.dataLabels = DataLabelList()
+            ch.dataLabels.showPercent = dia["beschriftung"] == "prozent"
+            ch.dataLabels.showVal = dia["beschriftung"] == "wert"
+            ch.dataLabels.showCatName = False
+            ch.dataLabels.showSerName = False
+            ch.dataLabels.showLegendKey = False
+            ch.dataLabels.showBubbleSize = False
+        if isinstance(ch, PieChart):
+            # §8: alle Artefakte schwarz-weiß. Ohne eigene Zuweisung färbt
+            # die Anwendung jeden Datenpunkt bunt ein.
+            stufen = ["404040", "595959", "7F7F7F", "A6A6A6", "BFBFBF",
+                      "D9D9D9"]
+            punkte = (r_bis - r_von) + 1
+            ch.series[0].data_points = [
+                DataPoint(idx=i, spPr=GraphicalProperties(
+                    solidFill=ColorChoice(srgbClr=stufen[i % len(stufen)]),
+                    ln=LineProperties(solidFill="404040", w=9525)))
+                for i in range(punkte)]
+            ch.legend.position = "b"
         ch.height = dia.get("hoehe", 9)
         ch.width = dia.get("breite", 19)
         ws.add_chart(ch, dia.get("position", "A12"))

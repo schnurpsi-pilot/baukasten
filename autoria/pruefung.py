@@ -336,6 +336,54 @@ def satzanfaenge_pruefen(spec, bf):
               "erste nach einer Anrede.")
 
 
+def objekte_pruefen(spec, ordner, bf):
+    """Textverarbeitungsobjekte nach Anhang D.2 am Artefakt nachweisen.
+
+    Ein Pflichtelement gilt nach §10.3 als belegt, wenn es bepunktet
+    abgefragt wurde. Ob die Lösungsdatei es dann auch wirklich enthält,
+    behauptet sonst niemand nach — deshalb wird hier am fertigen Artefakt
+    geprüft statt an der Spezifikation.
+    """
+    import zipfile
+
+    from . import objekte as O
+
+    def _dokument_xml(pfad):
+        """Rohes document.xml einer .dotx.
+
+        objekte.hat_wordart erwartet ein geöffnetes Dokument, python-docx
+        öffnet eine Vorlage aber nicht — der Content-Type ist ein anderer.
+        Für die Prüfung genügt das XML aus dem Archiv.
+        """
+        with zipfile.ZipFile(pfad) as z:
+            return z.read("word/document.xml").decode("utf-8")
+
+    name = spec["meta"]["satzname"]
+    geprueft = []
+    for datei in spec.get("dateien", []):
+        if datei["art"] != "dotx":
+            continue
+        pfad = os.path.join(ordner, f"{name}_{datei['praefix']}_Loesung.dotx")
+        if not os.path.exists(pfad):
+            bf.fehler(f"Lösungsvorlage fehlt: {os.path.basename(pfad)}.")
+            continue
+        if O.ist_vorlage(pfad):
+            geprueft.append(f"{datei['praefix']}: echte Dokumentvorlage")
+        else:
+            bf.fehler(f"{os.path.basename(pfad)} ist nur umbenannt, nicht als "
+                      "Dokumentvorlage angelegt (Anhang D.2).")
+        if datei.get("wordart_erwartet"):
+            xml = _dokument_xml(pfad)
+            if "v:textpath" in xml and 'string="' in xml:
+                geprueft.append(f"{datei['praefix']}: WordArt vorhanden")
+            else:
+                bf.fehler(f"{os.path.basename(pfad)} enthält kein WordArt, "
+                          "das Pflichtelement wäre unbelegt (§10.3).")
+    if geprueft:
+        bf.ok("Textverarbeitungsobjekte am Artefakt nachgewiesen: "
+              + "; ".join(geprueft) + ".")
+
+
 def ungeprueft_melden(spec, bf):
     """Was maschinell nicht prüfbar ist, gehört nach Rot beziehungsweise Gelb."""
     bf.grenze("Keine Datei in Microsoft Word oder Excel geöffnet. Gerendert und "
@@ -366,6 +414,7 @@ def alles_pruefen(spec, ordner, dateiliste, loesungspfad=None,
     if teilnehmerpfad:
         teilnehmerdatei_pruefen(teilnehmerpfad, spec, bf)
     satzanfaenge_pruefen(spec, bf)
+    objekte_pruefen(spec, ordner, bf)
     vollstaendigkeit_pruefen(ordner, dateiliste, bf)
     ungeprueft_melden(spec, bf)
     return bf

@@ -17,6 +17,7 @@ from docx.shared import Pt, Cm
 from . import docxbau as B
 from . import dokumente as DOK
 from . import layout as L
+from . import objekte as O
 from . import pruefung as P
 from . import reihe as R
 from . import xlsxbau as X
@@ -52,10 +53,22 @@ def _bloecke_schreiben(doc, bloecke, fettbegriffe=()):
                 p.paragraph_format.first_line_indent = Cm(-block.get("einzug", 0.5))
                 p.paragraph_format.space_after = Pt(block.get("nach", 3))
         elif typ == "tabelle":
-            breiten, groesse = L.auto_breiten(block["kopf"], block["zeilen"],
-                                              gesamt_cm=block.get("gesamt", 16.0),
-                                              pt=block.get("pt", 10))
+            # Feste Breiten, wenn die Aufgabe sie messbar vorgibt (§6.2) —
+            # sonst misst das Layout die Spalten selbst aus (§18.3).
+            if block.get("breiten"):
+                breiten = block["breiten"]
+                groesse = block.get("pt", 10)
+            else:
+                breiten, groesse = L.auto_breiten(
+                    block["kopf"], block["zeilen"],
+                    gesamt_cm=block.get("gesamt", 16.0), pt=block.get("pt", 10))
             B.tabelle(doc, block["kopf"], block["zeilen"], breiten, groesse=groesse)
+        elif typ == "wordart":
+            p = B.absatz(doc, "", nach=block.get("nach", 12),
+                         vor=block.get("vor", 0), zentriert=True)
+            O.wordart(p, block["text"], breite_pt=block.get("breite_pt", 340),
+                      hoehe_pt=block.get("hoehe_pt", 42),
+                      groesse_pt=block.get("groesse_pt", 36))
         elif typ == "leer":
             B.absatz(doc, "", nach=block.get("nach", 0))
         else:
@@ -63,10 +76,13 @@ def _bloecke_schreiben(doc, bloecke, fettbegriffe=()):
     return doc
 
 
-def _dokument_bauen(definition, pfad, fussnoten=None, fusszeile=False):
+def _dokument_bauen(definition, pfad, fussnoten=None, fusszeile=False,
+                    autotext=None):
     doc = Document()
     B.grundformat(doc)
-    if fusszeile:
+    if autotext:
+        B.autotext_fusszeile(doc, felder=autotext)
+    elif fusszeile:
         B.seitenzahl_fusszeile(doc)
     _bloecke_schreiben(doc, definition)
     doc.save(pfad)
@@ -172,6 +188,20 @@ def satz_bauen(spec, arbeitsordner, ausgabeordner, vorlagen_ordner,
             _dokument_bauen(datei["loesung"], p(lp),
                             fussnoten=datei.get("fussnoten"),
                             fusszeile=datei.get("fusszeile", False))
+        elif datei["art"] == "dotx":
+            # Die Teilnehmerdatei ist ein gewöhnliches Dokument — das
+            # Speichern als Dokumentvorlage ist selbst Prüfungsleistung
+            # (Anhang D.2). Die Lösung ist deshalb die fertige .dotx.
+            tp = f"{name}_{praefix}_Teilnehmer.docx"
+            lp = f"{name}_{praefix}_Loesung.dotx"
+            _dokument_bauen(datei["teilnehmer"], p(tp))
+            zwischen = p(f"{name}_{praefix}_Loesung_roh.docx")
+            _dokument_bauen(datei["loesung"], zwischen,
+                            fussnoten=datei.get("fussnoten"),
+                            fusszeile=datei.get("fusszeile", False),
+                            autotext=datei.get("autotext"))
+            O.als_dotx(zwischen, p(lp))
+            os.remove(zwischen)
         elif datei["art"] == "vorlage":
             tp = f"{name}_{praefix}_Teilnehmer.docx"
             lp = f"{name}_{praefix}_Loesung.docx"

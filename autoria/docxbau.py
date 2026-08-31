@@ -74,6 +74,40 @@ def seitenzahl_fusszeile(doc, groesse=9):
             r.font.size = Pt(groesse)
 
 
+def autotext_fusszeile(doc, groesse=9, felder=("dateiname", "datum", "seiten")):
+    """Fußzeile aus Autotext-Feldern (Anhang D.2).
+
+    Autotext meint in der Befehlsübersicht die einfügbaren Felder Dateiname,
+    Datum, Seitenanzahl und Uhrzeit. Sie werden als echte Feldfunktionen
+    gesetzt, nicht als getippter Text — nur dann aktualisieren sie sich und
+    nur dann ist die Prüfungsleistung nachweisbar.
+    """
+    ANWEISUNG = {"dateiname": " FILENAME \\* MERGEFORMAT ",
+                 "datum": " DATE \\@ \"dd.MM.yyyy\" ",
+                 "uhrzeit": " TIME \\@ \"HH:mm\" ",
+                 "seiten": None}
+    for s in doc.sections:
+        p = s.footer.paragraphs[0]
+        p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        p.text = ""
+        for i, feld in enumerate(felder):
+            if i:
+                p.add_run("   \u00b7   ")
+            if feld == "seiten":
+                p.add_run("Seite ")
+                _feld(p, " PAGE ")
+                p.add_run(" von ")
+                _feld(p, " NUMPAGES ")
+            elif feld in ANWEISUNG:
+                _feld(p, ANWEISUNG[feld])
+            else:
+                raise KeyError(f"Unbekanntes Autotext-Feld: {feld}")
+        for r in p.runs:
+            r.font.name = ARIAL
+            r.font.size = Pt(groesse)
+    return doc
+
+
 def ueberschrift(doc, text, groesse=14, vor=0, nach=12, zentriert=False, halte=True):
     p = doc.add_paragraph()
     r = p.add_run(text)

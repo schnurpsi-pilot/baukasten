@@ -35,9 +35,12 @@ SATZ_UMSATZSTEUER = ("Alle Beträge in den Anlagen und Dateien sind Nettobeträg
 def _runs_mit_auszeichnung(par, text, fettbegriffe, groesse=11):
     """Zeichnet Datei- und Blattnamen sowie @@...@@ fett aus (§18.3)."""
     if fettbegriffe:
+        # Wortgrenzen sind Pflicht, sonst zeichnet ein kurzer Blattname jedes
+        # Kompositum an: aus "Postarten" würde "Postarten" mit fettem Kopf.
         muster = "|".join(re.escape(b) for b in sorted(fettbegriffe, key=len,
                                                        reverse=True))
-        teile = re.split(rf"(@@[^@]+@@|{muster})", text)
+        teile = re.split(rf"(@@[^@]+@@|(?<![\wÄÖÜäöüß])(?:{muster})"
+                         rf"(?![\wÄÖÜäöüß]))", text)
     else:
         teile = re.split(r"(@@[^@]+@@)", text)
     for teil in teile:
