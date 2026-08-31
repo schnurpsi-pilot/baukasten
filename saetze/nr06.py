@@ -242,9 +242,9 @@ def spec():
                  {"zelle": "A17", "text": "Gespräche je Monat", "fett": True},
                  {"zelle": "A18", "text": "Monat", "fett": True, "rahmen": True},
                  {"zelle": "B18", "text": "Monatszahl", "fett": True,
-                  "rahmen": True},
+                  "rahmen": True, "ausrichtung": "center"},
                  {"zelle": "C18", "text": "Gespräche", "fett": True,
-                  "rahmen": True},
+                  "rahmen": True, "ausrichtung": "center"},
                  {"zelle": "A26", "text": "Zeitplanung", "fett": True},
              ] + [{"zelle": f"A{m_erste + i}", "text": n, "rahmen": True}
                   for i, (n, _z) in enumerate(MONATE)]

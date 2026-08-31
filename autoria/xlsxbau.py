@@ -47,13 +47,19 @@ DIAGRAMMTYP = {
 
 
 def _kopf_stylen(ws, zeile, anzahl, hoehe=40):
+    """Kopfzeile formatieren.
+
+    Die Überschrift der Vorspalte steht linksbündig, alle übrigen zentriert
+    — dieselbe Regel wie in docxbau.tabelle, damit Arbeitsmappe und
+    Materialheft gleich gesetzt sind.
+    """
     for c in range(1, anzahl + 1):
         cell = ws.cell(row=zeile, column=c)
         cell.font = F_BOLD
         cell.border = BORD
         cell.fill = KOPFFARBE
-        cell.alignment = Alignment(horizontal="center", vertical="center",
-                                   wrap_text=True)
+        cell.alignment = Alignment(horizontal="left" if c == 1 else "center",
+                                   vertical="center", wrap_text=True)
     ws.row_dimensions[zeile].height = hoehe
 
 
@@ -171,6 +177,13 @@ def _auswertungsblatt(wb, blatt, loesung):
         cell.font = F_BOLD if fest.get("fett") else F_TXT
         if fest.get("rahmen"):
             cell.border = BORD
+        # Blocküberschriften folgen derselben Regel wie die Kopfzeile der
+        # Auswertungstabelle: die Vorspalte links, alles Weitere zentriert.
+        # Ohne Angabe bleibt es beim Standard, damit Rubriktexte und
+        # Zwischenüberschriften unberührt bleiben.
+        if fest.get("ausrichtung"):
+            cell.alignment = Alignment(horizontal=fest["ausrichtung"],
+                                       vertical="center", wrap_text=True)
 
     for zusatz in blatt.get("einzelzellen", []):
         if zusatz.get("label"):
