@@ -11,7 +11,10 @@ nicht umformuliert werden.
 """
 
 # Platzhalter {beispieldatei} wird je Satz gefüllt, weil die Endung von der
-# ersten Aufgabe abhängt.
+# ersten Aufgabe abhängt. Die Zahl der Anlagen wird bewusst nicht genannt:
+# sie ändert sich je Satz, ließe sich nicht gegen die Anlagenliste prüfen und
+# brächte den Teilnehmenden keinen Nutzen — welche Anlage gebraucht wird,
+# steht ohnehin an jeder Aufgabe.
 HINWEISE_STANDARD = [
     ("Ablage der Dateien",
      "Wenn Sie nicht schon einen Ordner mit dem Namen AP1 angelegt haben, "
@@ -24,9 +27,8 @@ HINWEISE_STANDARD = [
      "und dem heutigen Tagesdatum im Format TTMM, also Tag und Monat je "
      "zweistellig. Beispiel: {beispieldatei}."),
     ("Anlagen",
-     "Die Anlagen 1 bis {anlagenzahl} stehen im Materialheft. Jede Aufgabe "
-     "nennt die Anlagen, die dafür gebraucht werden. Die Anlagen werden nicht "
-     "bearbeitet."),
+     "Die Anlagen stehen im Materialheft. Jede Aufgabe nennt die Anlagen, die "
+     "dafür gebraucht werden. Die Anlagen werden nicht bearbeitet."),
     ("Punkte",
      "Die Punktzahl steht hinter jeder Teilaufgabe. In jeder Aufgabe "
      "entfallen zusätzlich 2 Punkte auf die Einhaltung der Formatvorgaben. "
@@ -38,12 +40,11 @@ HINWEISE_STANDARD = [
 ]
 
 
-def hinweise(beispieldatei="Weber1708_A1.xlsx", anlagenzahl=5):
-    """Liefert die Allgemeinen Hinweise mit gefüllten Platzhaltern.
+def hinweise(beispieldatei="Weber1708_A1.xlsx"):
+    """Liefert die Allgemeinen Hinweise mit gefülltem Platzhalter.
 
     beispieldatei: Beispiel für die Dateibenennung, passend zur ersten
-    Aufgabe des Satzes. anlagenzahl: Zahl der Anlagen im Materialheft.
+    Aufgabe des Satzes.
     """
-    return [(titel, text.format(beispieldatei=beispieldatei,
-                                anlagenzahl=anlagenzahl))
+    return [(titel, text.format(beispieldatei=beispieldatei))
             for titel, text in HINWEISE_STANDARD]
