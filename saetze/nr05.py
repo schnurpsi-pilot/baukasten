@@ -11,6 +11,7 @@ Sollwerte für die Rechenprobe nach §14.1 Punkt 3.
 """
 import datetime as dt
 from decimal import Decimal, ROUND_HALF_UP
+from autoria.texte import hinweise
 
 SATZNAME = "AP1-Nr05-V4-6"
 
@@ -96,30 +97,6 @@ SACHVERHALT = (
     "Ergebnis zu unterrichten."
 )
 
-HINWEISE = [
-    ("Ablage der Dateien",
-     "Legen Sie einen Ordner mit dem Namen AP1 an. Kopieren Sie die ZIP-Datei in "
-     "diesen Ordner und entpacken Sie sie dort. Bearbeiten Sie die Aufgaben "
-     "ausschließlich in den entpackten Dateien und speichern Sie diese im selben "
-     "Ordner."),
-    ("Dateibenennung",
-     "Speichern Sie jede bearbeitete Datei unter Ihrer Teilnehmernummer und der "
-     "Aufgabennummer. Die Teilnehmernummer besteht aus Ihrem Nachnamen und dem "
-     "heutigen Tagesdatum im Format TTMM, also Tag und Monat je zweistellig. "
-     "Beispiel: Weber1708_A1.xlsx."),
-    ("Anlagen",
-     "Die Anlagen 1 bis 5 stehen im Materialheft. Jede Aufgabe nennt die Anlagen, "
-     "die dafür gebraucht werden. Die Anlagen werden nicht bearbeitet."),
-    ("Punkte",
-     "Die Punktzahl steht hinter jeder Teilaufgabe. In jeder Aufgabe entfallen "
-     "zusätzlich 2 Punkte auf die Einhaltung der Formatvorgaben. Verwenden Sie "
-     "überall dort Formeln, die Sie nach unten kopieren können, wo mehrere Zeilen "
-     "gleichartig berechnet werden."),
-    ("Umsatzsteuer",
-     "Alle Beträge in den Anlagen und Dateien sind Nettobeträge; der "
-     "Umsatzsteuersatz beträgt 19 Prozent."),
-]
-
 # Nur die Zeilen, die dieser Satz braucht (§5.7 Teil 2). Geldbeträge kommen
 # nicht vor, dafür Uhrzeiten — das Pflichtelement STUNDE/MINUTE verlangt sie.
 FORMATVORGABEN = [
@@ -178,7 +155,7 @@ def spec():
         },
         "fettbegriffe": list(dateien.values()) + ["Ausw", "Post"],
         "sachverhalt": SACHVERHALT,
-        "hinweise": HINWEISE,
+        "hinweise": hinweise(beispieldatei="Weber1708_A1.xlsx"),
         "formatvorgaben": FORMATVORGABEN,
 
         # ---------------------------------------------------------- Arbeitsmappe
