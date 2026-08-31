@@ -13,7 +13,7 @@ BEISPIEL_KATEGORIEN = ["Muster A", "Muster B", "Muster C", "Muster D"]
 BEISPIEL_WERTE = [42, 61, 35, 55]
 
 
-def diagrammmuster(pfad, typ="balken", kategorien=None, werte=None,
+def diagrammmuster(pfad, typ="balken", datenbeschriftung=False, kategorien=None, werte=None,
                    titel="Diagrammüberschrift",
                    wertachse="Beschriftung der Wertachse",
                    rubrikachse="Beschriftung der Rubrikenachse",
@@ -31,8 +31,10 @@ def diagrammmuster(pfad, typ="balken", kategorien=None, werte=None,
         ax.set_ylabel(rubrikachse, fontsize=9)
         ax.xaxis.grid(True, color="0.85", linewidth=0.6)
     elif typ == "saeule":
-        ax.bar(kategorien, werte, color="0.55", edgecolor="0.2", width=0.6,
-               label=reihenname)
+        balken = ax.bar(kategorien, werte, color="0.55", edgecolor="0.2",
+                        width=0.6, label=reihenname)
+        if datenbeschriftung:
+            ax.bar_label(balken, padding=2, fontsize=8)
         ax.set_ylabel(wertachse, fontsize=9)
         ax.set_xlabel(rubrikachse, fontsize=9)
         ax.yaxis.grid(True, color="0.85", linewidth=0.6)

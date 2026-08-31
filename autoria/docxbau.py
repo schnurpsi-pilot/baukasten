@@ -20,6 +20,7 @@ from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
 
 from . import layout as L
+from .layout import trennbar
 
 ARIAL = "Arial"
 
@@ -241,7 +242,7 @@ def _ist_zahl_oder_datum(wert):
 
 
 def tabelle(doc, kopf, zeilen, breiten_cm, groesse=10, mit_kopf=True,
-            zahlenspalten=(), erste_spalte_links=True):
+            zahlenspalten=(), erste_spalte_links=True, mittelspalten=()):
     """Tabelle mit festen Spaltenbreiten (§18.3).
 
     Feste Breiten brauchen beides: tblLayout=fixed plus Breite an jeder
@@ -253,7 +254,7 @@ def tabelle(doc, kopf, zeilen, breiten_cm, groesse=10, mit_kopf=True,
                         cols=len(breiten_cm))
     if mit_kopf:
         for i, t in enumerate(kopf):
-            tab.rows[0].cells[i].text = str(t)
+            tab.rows[0].cells[i].text = trennbar(t)
     versatz = 1 if mit_kopf else 0
     for ri, row in enumerate(zeilen):
         for ci, v in enumerate(row):
@@ -319,8 +320,16 @@ def tabelle(doc, kopf, zeilen, breiten_cm, groesse=10, mit_kopf=True,
                     # Kennungen stehen links, gleich in welcher Spalte:
                     # untereinander bleiben sie so vergleichbar.
                     p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-                else:
+                elif ci in set(mittelspalten or ()):
+                    # Zentriert nur, wo die Satzspezifikation es ausdrücklich
+                    # verlangt — etwa bei kurzen Kürzeln, die in der
+                    # Arbeitsmappe ebenfalls zentriert stehen.
                     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                else:
+                    # Fließtext steht links. Zentrierter Text in einer
+                    # Tabellenspalte ist ein Satzfehler, sobald die Einträge
+                    # unterschiedlich lang sind — die Anfänge fransen aus.
+                    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     return tab
 
 

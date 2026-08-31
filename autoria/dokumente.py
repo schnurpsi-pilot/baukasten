@@ -193,7 +193,8 @@ def materialheft(spec, pfad, bilder_ordner=None):
                     pt=block.get("pt", 10))
                 B.tabelle(doc, block["kopf"], block["zeilen"], breiten,
                           groesse=groesse,
-                          zahlenspalten=tuple(block.get("zahlenspalten", ())))
+                          zahlenspalten=tuple(block.get("zahlenspalten", ())),
+                          mittelspalten=tuple(block.get("mittelspalten", ())))
             elif typ == "liste":
                 B.aufzaehlung(doc, block["zeilen"],
                               runs_fkt=lambda p, t: _runs_mit_auszeichnung(

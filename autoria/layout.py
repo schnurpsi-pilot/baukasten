@@ -92,3 +92,14 @@ def eur(x, nbsp=True):
 def datum(d):
     """Datum nach §5.7 als TT.MM.JJJJ."""
     return d.strftime("%d.%m.%Y")
+
+# Weicher Trennstrich: Überschriften wie "Personal~nummer" erscheinen in
+# breiten Spalten als ein Wort und brechen in schmalen mit Trennstrich um.
+# Ein gewöhnlicher Bindestrich wäre dauerhaft sichtbar und damit in
+# "Personal-nummer" schlicht falsch geschrieben.
+WEICH = "\u00ad"
+
+
+def trennbar(text):
+    """Wandelt ~ in einen bedingten Trennstrich."""
+    return str(text).replace("~", WEICH) if text is not None else text

@@ -187,19 +187,19 @@ def spec():
                  {"kopf": "Vorgangs-Nr.", "art": "text", "breite": 27,
                   "werte": [r["nr"] for r in Z]},
                  {"kopf": "Postart-Kürzel", "art": "text", "breite": 18,
-                  "ausrichtung": "center", "werte": [r["kuerzel"] for r in Z]},
+                  "werte": [r["kuerzel"] for r in Z]},
                  {"kopf": "Eingang", "breite": 18, "format": "zeit",
                   "werte": [r["ein"] for r in Z]},
                  {"kopf": "Erledigt", "breite": 12, "format": "zeit",
                   "werte": [r["erl"] for r in Z]},
                  {"kopf": "Postart", "art": "text", "breite": 26,
                   "formel": "=VLOOKUP(B{z},Post!$A$4:$C$8,2,FALSE)"},
-                 {"kopf": "Bearbeitungs-dauer in Minuten", "breite": 15,
+                 {"kopf": "Bearbeitungs~dauer in Minuten", "breite": 15,
                   "format": "ganz",
                   "formel": "=HOUR(D{z}-C{z})*60+MINUTE(D{z}-C{z})"},
                  {"kopf": "Sollzeit in Minuten", "breite": 13, "format": "ganz",
                   "formel": "=VLOOKUP(B{z},Post!$A$4:$C$8,3,FALSE)"},
-                 {"kopf": "Beurteilung", "breite": 16, "ausrichtung": "center",
+                 {"kopf": "Beurteilung", "breite": 16, "ausrichtung": "left",
                   "formel": '=IF(F{z}>G{z},"überschritten","eingehalten")'},
              ],
              "festzellen": [
@@ -238,7 +238,7 @@ def spec():
                           "breite": 15.5, "hoehe": 9.5}},
 
             {"name": "Rekl", "titel": "Reklamationen laufendes Jahr",
-             "kopf": ["Vorgangs-nummer", "Möbelserie", "Grund", "Eingang",
+             "kopf": ["Vorgangs~nummer", "Möbelserie", "Grund", "Eingang",
                       "Erledigt"],
              "zeilen": [["R-2604", "Novara", "Transportschaden",
                          dt.date(2026, 1, 22), "ja"],
@@ -273,7 +273,7 @@ def spec():
                          dt.date(2027, 2, 14), 60]]},
 
             {"name": "Pers", "titel": "Personalstamm Verwaltung",
-             "kopf": ["Personal-nummer", "Name", "Abteilung", "Eintritt",
+             "kopf": ["Personal~nummer", "Name", "Abteilung", "Eintritt",
                       "Wochen-stunden"],
              "zeilen": [[70211, "Adam, Ruth", "Beschaffung/Einkauf",
                          dt.date(2018, 4, 1), 40],
@@ -483,26 +483,21 @@ def spec():
                      ("Betrifft", "Unterrichtung der Abteilung über die "
                                   "Auswertung KW 35")]},
                  {"typ": "text", "text":
-                     "Die Mitteilung geht an alle Mitarbeiterinnen und "
-                     "Mitarbeiter der Abteilung Verwaltung/Büroorganisation. "
-                     "Absenderin ist Frau Ute Winkelmann. Als Thema ist die "
-                     "Auswertung des Posteingangs der Kalenderwoche 35 "
-                     "anzugeben."},
+                     "Empfänger sind alle Mitarbeiterinnen und Mitarbeiter der "
+                     "Abteilung Verwaltung/Büroorganisation. Absenderin ist "
+                     "Frau Ute Winkelmann, Leiterin der Abteilung."},
                  {"typ": "text", "text":
-                     "Ausgewertet wurden die zehn Vorgänge der Kalenderwoche 35 "
-                     "vom 24. bis zum 28.08.2026. Verglichen wurde die "
-                     "Bearbeitungsdauer je Vorgang mit der für die jeweilige "
-                     "Postart vereinbarten Sollzeit."},
+                     "Ausgewertet wurde der Posteingang der Kalenderwoche 35 "
+                     "vom 24. bis zum 28.08.2026, verglichen mit den "
+                     "vereinbarten Sollzeiten je Postart."},
                  {"typ": "text", "text":
-                     "Die Zahl der Vorgänge über der Sollzeit entnehmen Sie "
-                     "Ihrer eigenen Auswertung aus Aufgabe 1. Als Maßnahme "
-                     "wird der Laufzettel aus Aufgabe 2 eingeführt; er "
-                     "begleitet ab dem 01.09.2026 jeden Posteingang."},
+                     "Als Maßnahme ist der Laufzettel aus Aufgabe 2 "
+                     "eingeführt. Er begleitet ab dem 01.09.2026 jeden "
+                     "Posteingang und wird in der Poststelle ausgefüllt."},
                  {"typ": "text", "text":
-                     "Die Auswertung wird der Mitteilung als Anlage beigefügt. "
-                     "Rückfragen nimmt Frau Petra Halm unter der Durchwahl "
-                     "357-124 entgegen. Die Mitteilung wird auf den 27.08.2026 "
-                     "datiert; das Datum ist in der Datei bereits eingetragen."},
+                     "Die Auswertung liegt der Mitteilung als Anlage bei. "
+                     "Rückfragen beantwortet Frau Petra Halm unter der "
+                     "Durchwahl 357-124."},
              ]},
             {"nr": 5, "titel": "Gestaltungsmuster für das Diagramm",
              "gehoert_zu": "Aufgabe 1", "quer": True,

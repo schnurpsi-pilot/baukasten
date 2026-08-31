@@ -115,7 +115,8 @@ FORMATVORGABEN = [
     ["Mengen und Stückzahlen", "ohne Dezimalstellen, ab fünf Stellen mit "
                                "Tausenderpunkt"],
     ["Schrift in allen Dateien", "Arial 11 pt"],
-    ["Diagramm", "Titel, Legende und Achsenbeschriftung sichtbar"],
+    ["Diagramm", "Titel, Legende, Achsenbeschriftung und "
+                  "Datenbeschriftung sichtbar"],
 ]
 
 # ------------------------------------------------------------ Serienbrief A2
@@ -191,15 +192,15 @@ def spec():
              "titel": "Fristenkontrolle Probezeitgespräche",
              "anzahl_zeilen": ANZAHL_MA,
              "spalten": [
-                 {"kopf": "Personal-nummer", "breite": 24, "format": "ganz",
-                  "ausrichtung": "center", "werte": [r["nr"] for r in Z]},
+                 {"kopf": "Personal~nummer", "breite": 24, "format": "ganz",
+                  "ausrichtung": "left", "werte": [r["nr"] for r in Z]},
                  {"kopf": "Name", "art": "text", "breite": 20,
                   "werte": [r["name"] for r in Z]},
                  {"kopf": "Standort", "art": "text", "breite": 13,
                   "werte": [r["ort"] for r in Z]},
                  {"kopf": "Eintritt", "breite": 13, "format": "datum",
                   "werte": [r["eintritt"] for r in Z]},
-                 {"kopf": "Gesprächs-termin", "breite": 14, "format": "datum",
+                 {"kopf": "Gesprächs~termin", "breite": 14, "format": "datum",
                   "formel": "=VLOOKUP(A{z},Teiln!$A$4:$H$11,7,FALSE)"},
                  {"kopf": "Jahr des Gesprächs", "breite": 12, "format": "ganz",
                   "formel": "=YEAR(E{z})"},
@@ -208,9 +209,9 @@ def spec():
                  {"kopf": "Tage von Eintritt bis Gespräch", "breite": 14,
                   "format": "ganz", "formel": "=E{z}-D{z}"},
                  {"kopf": "Zeitpunkt im Monat", "breite": 16,
-                  "ausrichtung": "center",
+                  "ausrichtung": "left",
                   "formel": '=IF(DAY(E{z})<=15,"erste Hälfte","zweite Hälfte")'},
-                 {"kopf": "Beurteilung", "breite": 14, "ausrichtung": "center",
+                 {"kopf": "Beurteilung", "breite": 14, "ausrichtung": "left",
                   "formel": '=IF(H{z}>%d,"kritisch","rechtzeitig")'
                             % GRENZE_TAGE},
              ],
@@ -252,12 +253,12 @@ def spec():
                           "titel": "Probezeitgespräche je Monat",
                           "wertachse": "Anzahl der Gespräche",
                           "rubrikachse": "Monat", "position": "A32",
-                          "legende": "unten",
+                          "legende": "unten", "beschriftung": "wert",
                           "breite": 15.5, "hoehe": 8.0}},
 
             {"name": "Teiln", "titel": "Mitarbeitende in der Probezeit",
              "stammdaten": True,
-             "kopf": ["Personal-nummer", "Anrede", "Briefanrede", "Vorname",
+             "kopf": ["Personal~nummer", "Anrede", "Briefanrede", "Vorname",
                       "Nachname", "Standort", "Gesprächstermin", "Uhrzeit"],
              "breiten": [13, 10, 16, 14, 16, 13, 15, 11],
              "formate": ["ganz", None, None, None, None, None, "datum",
@@ -267,7 +268,7 @@ def spec():
                         for r in Z]},
 
             {"name": "Fehlz", "titel": "Fehlzeiten laufendes Jahr",
-             "kopf": ["Personal-nummer", "Grund", "Von", "Bis", "Arbeitstage"],
+             "kopf": ["Personal~nummer", "Grund", "Von", "Bis", "Arbeitstage"],
              "formate": ["ganz", None, "datum", "datum", "ganz"],
              "zeilen": [[70214, "Krankheit", dt.date(2026, 3, 9),
                          dt.date(2026, 3, 13), 5],
@@ -369,8 +370,9 @@ def spec():
                        "Gespräche in Minuten. Rechnen Sie mit dem "
                        "Richtwert aus den Zellen B27 und B28.", 4),
                  ("l", "Erstellen Sie im Blatt Frist ab Zelle A32 ein "
-                       "Säulendiagramm zu den Gesprächen je Monat. Gestalten "
-                       "Sie es nach dem Muster in Anlage 5.", 4),
+                       "Säulendiagramm zu den Gesprächen je Monat. Die Werte "
+                       "stehen über den Säulen. Gestalten Sie es nach dem "
+                       "Muster in Anlage 5.", 4),
              ]},
             {"nr": 2, "typ": "textverarbeitung", "titel": "Textverarbeitung",
              "punkte": 32,
@@ -453,7 +455,7 @@ def spec():
                                          "positionsgerecht in die "
                                          "Auswertungstabelle."},
                  {"typ": "tabelle",
-                  "kopf": ["Personal-nummer", "Name", "Standort", "Eintritt"],
+                  "kopf": ["Personal~nummer", "Name", "Standort", "Eintritt"],
                   "zeilen": [[str(r["nr"]), r["name"], r["ort"],
                               _datum(r["eintritt"])] for r in Z],
                   "zahlenspalten": [0, 3]},
@@ -506,24 +508,21 @@ def spec():
                      ("Auftrag von", "Sina Reinbold, Leiterin "
                                      "Personal/Ausbildung")]},
                  {"typ": "text", "text":
-                     "Geprüft wurden die Probezeiten der acht Mitarbeitenden, "
-                     "deren Probezeit zwischen September 2026 und Februar 2027 "
-                     "endet. Als Betreff ist die Fristenkontrolle der "
-                     "Probezeitgespräche anzugeben."},
+                     "Gegenstand der Prüfung sind die acht Mitarbeitenden an "
+                     "den Standorten Berlin, Leipzig und Hamburg, deren "
+                     "Probezeit zwischen September 2026 und Februar 2027 "
+                     "endet."},
                  {"typ": "text", "text":
-                     "Die Anzahl der kritischen Fristen und den Zeitbedarf für "
-                     "alle Gespräche entnehmen Sie Ihrer eigenen Auswertung aus "
-                     "Aufgabe 1. Beide Werte gehören in den Aktenvermerk."},
+                     "Als Maßnahme ist die Einladung aller acht Mitarbeitenden "
+                     "zum Probezeitgespräch veranlasst. Die Einladungen gehen "
+                     "am 31.08.2026 als Serienbrief in den Versand."},
                  {"typ": "text", "text":
-                     "Veranlasst wurde die Einladung aller acht Mitarbeitenden "
-                     "als Serienbrief. Die Einladungen gehen am 31.08.2026 in "
-                     "den Versand. Zur Wiedervorlage ist der 15.09.2026 "
-                     "vorzumerken; bis dahin sollen die Rückmeldungen zu den "
-                     "Terminen vorliegen."},
+                     "Wiedervorlage am 15.09.2026. Bis dahin sollen die "
+                     "Rückmeldungen zu den Terminen vorliegen."},
                  {"typ": "text", "text":
-                     "Der Aktenvermerk beginnt ohne Anrede unmittelbar mit dem "
-                     "Inhalt. Er wird auf den 27.08.2026 datiert; das Datum ist "
-                     "in der Datei bereits eingetragen."},
+                     "Rückfragen zur Fristenkontrolle beantwortet Herr Ove "
+                     "Marquardt unter der Durchwahl 357-152. Der Vorgang wird "
+                     "unter dem Aktenzeichen per-fk-2026-08 abgelegt."},
              ]},
             {"nr": 5, "titel": "Gestaltungsmuster für das Diagramm",
              "gehoert_zu": "Aufgabe 1", "quer": True,
@@ -744,14 +743,19 @@ def _bewertung():
                      "geänderter Datenlage falsch."},
         {"nr": "1l", "punkte": 4,
          "leistung": "Im Blatt Frist steht ab A32 ein Säulendiagramm zu den "
-                     "Gesprächen je Monat, gestaltet nach Anlage 5.",
+                     "Gesprächen je Monat mit den Werten über den Säulen, "
+                     "gestaltet nach Anlage 5.",
          "hinweis": "Datenbereich: Rubriken A19:A24, Werte C19:C24. "
-                    "Diagrammtitel, Legende und beide Achsenbeschriftungen "
-                    "sind gesetzt. 1 Punkt Datenbereich, 1 Punkt Diagrammtyp, "
-                    "2 Punkte Beschriftungen.",
+                    "Diagrammtitel, Legende, beide Achsenbeschriftungen und "
+                    "die Datenbeschriftung über den Säulen sind gesetzt. "
+                    "1 Punkt Datenbereich, 1 Punkt Diagrammtyp, 1 Punkt "
+                    "Achsen- und Diagrammbeschriftung, 1 Punkt "
+                    "Datenbeschriftung.",
          "toleranz": "Balkendiagramm statt Säulendiagramm: 1 Punkt Abzug. "
                      "Datenbereich über Spalte B statt Spalte C: 1 Punkt "
-                     "Abzug, das Diagramm zeigt dann die Monatszahlen."},
+                     "Abzug, das Diagramm zeigt dann die Monatszahlen. "
+                     "Datenbeschriftung innerhalb der Säule statt darüber: "
+                     "kein Abzug."},
         {"nr": "1 Format", "punkte": 2,
          "leistung": "Die Formatvorgaben des Aufgabenbogens sind im Blatt "
                      "Frist eingehalten.",

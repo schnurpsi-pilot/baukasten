@@ -10,6 +10,8 @@ import datetime as dt
 
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+
+from .layout import trennbar
 from openpyxl.chart import BarChart, LineChart, PieChart, ScatterChart, Reference
 from openpyxl.chart.label import DataLabelList
 from openpyxl.chart.marker import DataPoint
@@ -108,7 +110,7 @@ def _datenblatt(wb, blatt):
     kopf = blatt["kopf"]
     kopfzeile = blatt.get("kopfzeile", 3)
     for i, t in enumerate(kopf, start=1):
-        ws.cell(row=kopfzeile, column=i, value=t)
+        ws.cell(row=kopfzeile, column=i, value=trennbar(t))
         vorgabe = blatt.get("breiten", [None] * len(kopf))[i - 1] \
             or max(12, min(30, len(str(t)) + 6))
         ws.column_dimensions[get_column_letter(i)].width = _breite(t, vorgabe)
@@ -145,7 +147,7 @@ def _auswertungsblatt(wb, blatt, loesung):
     anzahl = blatt["anzahl_zeilen"]
 
     for i, sp in enumerate(spalten, start=1):
-        ws.cell(row=kopfzeile, column=i, value=sp["kopf"])
+        ws.cell(row=kopfzeile, column=i, value=trennbar(sp["kopf"]))
         ws.column_dimensions[get_column_letter(i)].width = \
             _breite(sp["kopf"], sp.get("breite"))
     _kopf_stylen(ws, kopfzeile, len(spalten))
