@@ -185,11 +185,16 @@ def pflichtbelegung(plan, historie, eintrag):
     offen = []
     for zeile in bilanz:
         name = zeile.get("pflichtelement")
-        # Der Feldname trägt die Bezugsgröße der Reihe. Er hat sich schon
-        # einmal geändert (32 auf 26 Vollprüfungen), deshalb werden beide
-        # Schreibweisen und ein neutrales "soll" akzeptiert.
-        soll = (zeile.get("soll_bei_26") or zeile.get("soll_bei_32")
-                or zeile.get("soll") or 0)
+        # Der Feldname trägt die Bezugsgröße der Reihe und hat sich schon
+        # zweimal geändert (32, 26, 29 Vollprüfungen). Deshalb wird jedes
+        # Feld "soll_bei_*" akzeptiert statt einer festen Liste — sonst
+        # rutscht der Sollwert bei der nächsten Umbenennung stillschweigend
+        # auf null, und alle Pflichtelemente gelten fälschlich als erfüllt.
+        soll = zeile.get("soll", 0)
+        for feld, wert in zeile.items():
+            if feld.startswith("soll_bei_"):
+                soll = wert
+                break
         ist = belegt.get(_normal(name), 0)
         if ist < soll:
             offen.append(name)
