@@ -1,0 +1,321 @@
+# -*- coding: utf-8 -*-
+"""Erzeugt Teilnehmer- und Lösungsarbeitsmappe aus der Satzspezifikation.
+
+Die Lösungsdatei enthält echte Formeln in echten Zellen (§18.2), die
+Teilnehmerdatei dieselbe Struktur mit leeren Zielbereichen (§6.1).
+openpyxl schreibt Formeln in englischer Notation mit Komma als Trennzeichen;
+Excel zeigt sie in deutscher Oberfläche mit den deutschen Namen an.
+"""
+import datetime as dt
+
+from openpyxl import Workbook
+from openpyxl.styles import Font, Alignment, Border, Side, PatternFill
+
+from .layout import trennbar
+from openpyxl.chart import BarChart, LineChart, PieChart, ScatterChart, Reference
+from openpyxl.chart.label import DataLabelList
+from openpyxl.chart.marker import DataPoint
+from openpyxl.chart.data_source import AxDataSource, StrRef
+from openpyxl.drawing.fill import ColorChoice
+from openpyxl.drawing.line import LineProperties
+from openpyxl.chart.shapes import GraphicalProperties
+from openpyxl.utils import get_column_letter
+
+ARIAL = "Arial"
+F_TXT = Font(name=ARIAL, size=11)
+F_BOLD = Font(name=ARIAL, size=11, bold=True)
+_THIN = Side(style="thin", color="808080")
+BORD = Border(left=_THIN, right=_THIN, top=_THIN, bottom=_THIN)
+KOPFFARBE = PatternFill("solid", fgColor="D9D9D9")
+
+# Zahlenformate nach §5.7
+FMT = {
+    "eur": '#,##0.00" €"',
+    "prozent": '0.0%',
+    "menge": '#,##0',
+    "ganz": '0',
+    "datum": 'DD.MM.YYYY',
+    "zeit": 'HH:MM',
+    "text": '@',
+    "dezimal": '#,##0.00',
+}
+
+DIAGRAMMTYP = {
+    "balken": (BarChart, {"type": "bar"}),
+    "saeule": (BarChart, {"type": "col"}),
+    "linie": (LineChart, {}),
+    "kreis": (PieChart, {}),
+    "punkt": (ScatterChart, {}),
+}
+
+
+def _kopf_stylen(ws, zeile, anzahl, hoehe=40):
+    """Kopfzeile formatieren.
+
+    Die Überschrift der Vorspalte steht linksbündig, alle übrigen zentriert
+    — dieselbe Regel wie in docxbau.tabelle, damit Arbeitsmappe und
+    Materialheft gleich gesetzt sind.
+    """
+    for c in range(1, anzahl + 1):
+        cell = ws.cell(row=zeile, column=c)
+        cell.font = F_BOLD
+        cell.border = BORD
+        cell.fill = KOPFFARBE
+        cell.alignment = Alignment(horizontal="left" if c == 1 else "center",
+                                   vertical="center", wrap_text=True)
+    ws.row_dimensions[zeile].height = hoehe
+
+
+def _wert_schreiben(ws, zeile, spalte, wert, fmt=None, ausrichtung=None):
+    cell = ws.cell(row=zeile, column=spalte, value=wert)
+    cell.border = BORD
+    cell.font = F_TXT
+    if fmt:
+        cell.number_format = FMT.get(fmt, fmt)
+    if ausrichtung:
+        cell.alignment = Alignment(horizontal=ausrichtung)
+    return cell
+
+
+def _kopfbreite_noetig(kopf, zeichenreserve=2.4):
+    """Breite, bei der die Überschrift nie mitten im Wort umbricht (§18.3).
+
+    Excel bricht in einer zu schmalen Zelle zeichenweise um — aus
+    "Rabattsatz" wird "Rabattsat" und "z". Das verhindert nur eine Spalte,
+    die mindestens so breit ist wie ihr längstes unteilbares Wort; zwischen
+    Wörtern darf und soll dagegen umgebrochen werden.
+
+    Gemessen wird in Excel-Zeichenbreiten, der Einheit von
+    column_dimensions.width — nicht in Zentimetern.
+    """
+    woerter = str(kopf).replace("-", "- ").replace("/", "/ ").split()
+    laengstes = max((len(w) for w in woerter), default=0)
+    return laengstes + zeichenreserve
+
+
+def _breite(kopf, vorgabe, standard=14):
+    """Vorgegebene Breite, angehoben auf das Nötige für die Überschrift.
+
+    So bleibt die Vorgabe aus der Satzspezifikation wirksam und der
+    Zeichenumbruch ist trotzdem konstruktiv ausgeschlossen statt nur
+    bemessen.
+    """
+    return max(vorgabe if vorgabe else standard, _kopfbreite_noetig(kopf))
+
+
+def _datenblatt(wb, blatt):
+    """Ein gefülltes Blatt: Stammdaten oder Zusatzblatt (§6.1)."""
+    ws = wb.create_sheet(blatt["name"])
+    ws["A1"] = blatt.get("titel", blatt["name"])
+    ws["A1"].font = F_BOLD
+    kopf = blatt["kopf"]
+    kopfzeile = blatt.get("kopfzeile", 3)
+    for i, t in enumerate(kopf, start=1):
+        ws.cell(row=kopfzeile, column=i, value=trennbar(t))
+        vorgabe = blatt.get("breiten", [None] * len(kopf))[i - 1] \
+            or max(12, min(30, len(str(t)) + 6))
+        ws.column_dimensions[get_column_letter(i)].width = _breite(t, vorgabe)
+    _kopf_stylen(ws, kopfzeile, len(kopf))
+    formate = blatt.get("formate", [None] * len(kopf))
+    # Kennungen stehen links, auch wenn sie Zahlen sind (§18.3).
+    ausrichtungen = blatt.get("ausrichtungen", [None] * len(kopf))
+    for ri, row in enumerate(blatt["zeilen"]):
+        z = kopfzeile + 1 + ri
+        for ci, v in enumerate(row, start=1):
+            fmt = formate[ci - 1]
+            if fmt is None:
+                if isinstance(v, dt.date):
+                    fmt = "datum"
+                elif isinstance(v, (int, float)):
+                    fmt = "menge"
+            aus = ausrichtungen[ci - 1]
+            if aus is None:
+                aus = "left" if isinstance(v, str) else "right"
+            _wert_schreiben(ws, z, ci, v, fmt, aus)
+    return ws
+
+
+def _auswertungsblatt(wb, blatt, loesung):
+    """Das Blatt, in dem gerechnet wird.
+
+    Jede Spalte ist entweder 'eingabe' (von den Teilnehmenden aus einer
+    Anlage zu übernehmen) oder 'formel' (zu berechnen). In der
+    Teilnehmerdatei bleiben beide leer, in der Lösungsdatei stehen Werte
+    beziehungsweise Formeln.
+    """
+    ws = wb.create_sheet(blatt["name"])
+    ws["A1"] = blatt.get("titel", blatt["name"])
+    ws["A1"].font = F_BOLD
+    spalten = blatt["spalten"]
+    kopfzeile = blatt.get("kopfzeile", 3)
+    erste = kopfzeile + 1
+    anzahl = blatt["anzahl_zeilen"]
+
+    for i, sp in enumerate(spalten, start=1):
+        ws.cell(row=kopfzeile, column=i, value=trennbar(sp["kopf"]))
+        ws.column_dimensions[get_column_letter(i)].width = \
+            _breite(sp["kopf"], sp.get("breite"))
+    _kopf_stylen(ws, kopfzeile, len(spalten))
+
+    for ri in range(anzahl):
+        z = erste + ri
+        for ci, sp in enumerate(spalten, start=1):
+            cell = ws.cell(row=z, column=ci)
+            cell.border = BORD
+            cell.font = F_TXT
+            cell.alignment = Alignment(
+                horizontal=sp.get("ausrichtung",
+                                  "left" if sp.get("art") == "text" else "right"))
+            if not loesung:
+                continue
+            if "formel" in sp:
+                cell.value = sp["formel"].format(z=z, erste=erste,
+                                                 letzte=erste + anzahl - 1)
+            elif "werte" in sp:
+                cell.value = sp["werte"][ri]
+            if sp.get("format"):
+                cell.number_format = FMT.get(sp["format"], sp["format"])
+
+    # Feste Zellen stehen in beiden Fassungen: Blockköpfe und Rubriken sind
+    # vorgegebene Struktur, nicht Prüfungsleistung (§11.1).
+    for fest in blatt.get("festzellen", []):
+        cell = ws[fest["zelle"]]
+        cell.value = fest["text"]
+        cell.font = F_BOLD if fest.get("fett") else F_TXT
+        if fest.get("rahmen"):
+            cell.border = BORD
+        # Blocküberschriften folgen derselben Regel wie die Kopfzeile der
+        # Auswertungstabelle: die Vorspalte links, alles Weitere zentriert.
+        # Ohne Angabe bleibt es beim Standard, damit Rubriktexte und
+        # Zwischenüberschriften unberührt bleiben.
+        if fest.get("ausrichtung"):
+            cell.alignment = Alignment(horizontal=fest["ausrichtung"],
+                                       vertical="center", wrap_text=True)
+
+    for zusatz in blatt.get("einzelzellen", []):
+        if zusatz.get("label"):
+            lz = ws[zusatz["label_zelle"]]
+            lz.value = zusatz["label"]
+            lz.font = F_BOLD
+        cell = ws[zusatz["zelle"]]
+        cell.border = BORD
+        cell.font = F_TXT
+        cell.alignment = Alignment(horizontal="right")
+        if loesung:
+            cell.value = zusatz["formel"].format(erste=erste,
+                                                 letzte=erste + anzahl - 1)
+            if zusatz.get("format"):
+                cell.number_format = FMT.get(zusatz["format"], zusatz["format"])
+
+    dia = blatt.get("diagramm")
+    if dia and loesung:
+        klasse, kwargs = DIAGRAMMTYP[dia.get("typ", "saeule")]
+        ch = klasse()
+        for k, v in kwargs.items():
+            setattr(ch, k, v)
+        ch.title = dia["titel"]
+        if hasattr(ch, "y_axis"):
+            ch.y_axis.title = dia.get("wertachse", "")
+            ch.x_axis.title = dia.get("rubrikachse", "")
+            # Die Wertachse beginnt bei null. Ohne feste Untergrenze wählt
+            # die Anwendung einen Ausschnitt, sobald die Werte eng
+            # beieinanderliegen — die Balkenlängen verhalten sich dann nicht
+            # mehr wie die Werte und das Bild täuscht (§8, Gestaltungsmuster).
+            if dia.get("ab_null", True):
+                ch.y_axis.scaling.min = 0
+            if dia.get("hauptintervall"):
+                # Zu viele Teilstriche zwingen die Anwendung, die Zahlen
+                # schräg zu stellen, und legen ein Gitter über die Balken.
+                ch.y_axis.majorUnit = dia["hauptintervall"]
+            if dia.get("typ", "saeule") == "balken":
+                # Waagerechte Balken zeichnet die Anwendung von unten nach
+                # oben. Damit die erste Tabellenzeile oben steht wie im
+                # Gestaltungsmuster, wird die Rubrikenachse gedreht.
+                ch.x_axis.scaling.orientation = "maxMin"
+                ch.y_axis.crosses = "max"
+                # Beim waagerechten Balkendiagramm liegt die Wertachse unten,
+                # nicht links. Sonst stehen beide Achsen übereinander und die
+                # Werteskala erscheint ohne Zahlen.
+                ch.x_axis.axPos = "l"
+                ch.y_axis.axPos = "b"
+        # Ohne Angabe speist sich das Diagramm aus der Auswertungstabelle.
+        # Ein eigener Bereich wird gebraucht, wenn die Datenlage darunter
+        # steht — etwa eine Anteilsrechnung je Kategorie.
+        w_von, w_bis = dia.get("werte_zeilen", (kopfzeile, erste + anzahl - 1))
+        r_von, r_bis = dia.get("rubrik_zeilen", (erste, erste + anzahl - 1))
+        werte = Reference(ws, min_col=dia["wertespalte"], min_row=w_von,
+                          max_row=w_bis)
+        rubriken = Reference(ws, min_col=dia["rubrikspalte"], min_row=r_von,
+                             max_row=r_bis)
+        ch.add_data(werte, titles_from_data=True)
+        ch.set_categories(rubriken)
+        # set_categories legt die Rubriken als Zahlenbezug an. Stehen dort
+        # Namen statt Zahlen, findet die Anwendung keine Beschriftung und
+        # schiebt die Rubriken ersatzweise in die Legende — die Rubrikenachse
+        # bleibt dann leer. Textrubriken brauchen einen Textbezug.
+        rubrik_text = any(
+            isinstance(ws.cell(row=z, column=dia["rubrikspalte"]).value, str)
+            for z in range(r_von, r_bis + 1))
+        if rubrik_text:
+            bezug = (f"'{ws.title}'!$"
+                     + get_column_letter(dia["rubrikspalte"])
+                     + f"${r_von}:$" + get_column_letter(dia["rubrikspalte"])
+                     + f"${r_bis}")
+            for reihe in ch.series:
+                reihe.cat = AxDataSource(strRef=StrRef(f=bezug))
+        if dia.get("beschriftung"):
+            # Kreisdiagramme tragen ihre Aussage in der Beschriftung, nicht
+            # an einer Achse (Anhang D.4). Kategorie- und Reihenname werden
+            # ausdrücklich abgeschaltet: sonst ergänzt die Anwendung sie und
+            # jedes Kreissegment trägt dreimal dieselbe Auskunft.
+            ch.dataLabels = DataLabelList()
+            ch.dataLabels.showPercent = dia["beschriftung"] == "prozent"
+            ch.dataLabels.showVal = dia["beschriftung"] == "wert"
+            ch.dataLabels.showCatName = False
+            ch.dataLabels.showSerName = False
+            ch.dataLabels.showLegendKey = False
+            ch.dataLabels.showBubbleSize = False
+        if isinstance(ch, PieChart):
+            # §8: alle Artefakte schwarz-weiß. Ohne eigene Zuweisung färbt
+            # die Anwendung jeden Datenpunkt bunt ein — beim Kreisdiagramm
+            # anders als bei einer einreihigen Säule, wo es nicht auffällt.
+            stufen = ["404040", "595959", "7F7F7F", "A6A6A6", "BFBFBF",
+                      "D9D9D9"]
+            punkte = (r_bis - r_von) + 1
+            ch.series[0].data_points = [
+                DataPoint(idx=i, spPr=GraphicalProperties(
+                    solidFill=ColorChoice(srgbClr=stufen[i % len(stufen)]),
+                    ln=LineProperties(solidFill="404040", w=9525)))
+                for i in range(punkte)]
+            ch.legend.position = "b"
+        else:
+            # §8: auch Säulen, Balken und Linien schwarz-weiß. Ohne eigene
+            # Zuweisung greift die bunte Standardpalette der Anwendung.
+            for reihe in ch.series:
+                reihe.graphicalProperties = GraphicalProperties(
+                    solidFill=ColorChoice(srgbClr="7F7F7F"),
+                    ln=LineProperties(solidFill="404040", w=9525))
+        if ch.legend is not None and dia.get("legende", "unten") == "unten":
+            # Rechts stehend frisst die Legende Zeichenfläche und wird beim
+            # Drucken abgeschnitten, sobald die Reihennamen lang sind.
+            # Deshalb ist unten der Standard; "rechts" bleibt als Ausnahme.
+            ch.legend.position = "b"
+        ch.height = dia.get("hoehe", 9)
+        ch.width = dia.get("breite", 19)
+        ws.add_chart(ch, dia.get("position", "A12"))
+    return ws
+
+
+def mappe_bauen(spec, loesung, pfad):
+    """Baut eine Arbeitsmappe in der Blattreihenfolge der Spezifikation."""
+    wb = Workbook()
+    wb.remove(wb.active)
+    for blatt in spec["blaetter"]:
+        if blatt.get("art") == "auswertung":
+            _auswertungsblatt(wb, blatt, loesung)
+        else:
+            _datenblatt(wb, blatt)
+    aktiv = spec.get("aktives_blatt", spec["blaetter"][0]["name"])
+    wb.active = wb.sheetnames.index(aktiv)
+    wb.save(pfad)
+    return pfad
